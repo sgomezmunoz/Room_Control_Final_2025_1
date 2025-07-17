@@ -24,6 +24,7 @@
 #include "led.h"
 #include "keypad.h"
 #include "ring_buffer.h"
+#include "dht11.h"
 #include "room_control.h"
 #include <stdio.h>
 
@@ -139,7 +140,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+DHT11_Data_t dht_data;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -186,6 +187,7 @@ int main(void)
   ssd1306_WriteString("Hello, 4100901!", Font_7x10, White);
   ssd1306_UpdateScreen(); // Update the display to show the
   HAL_UART_Transmit(&huart2, (uint8_t *)"Hello, 4100901!\r\n", 17, HAL_MAX_DELAY);
+  uint32_t last_read = 0;
   while (1) {
     heartbeat(); // Call the heartbeat function to toggle the LED
 
@@ -204,12 +206,8 @@ int main(void)
       keypad_interrupt_pin = 0;
     }
 
-    // DEMO: Button functionality - Remove when implementing room control logic  
-    if (button_pressed) {
-      write_to_oled("Button Pressed!", White, 17, 17); // Display message on OLED
-      button_pressed = 0; // Reset the flag
-    }
-
+    
+  
     // DEMO: UART functionality - Remove when implementing room control logic
     if (usart_2_rxbyte != 0) {
       write_to_oled((char *)&usart_2_rxbyte, White, 31, 31); // Display received byte on OLED
@@ -218,7 +216,12 @@ int main(void)
 
     // TODO: TAREA - Implementar procesamiento de comandos remotos
     // command_parser_process(); // Procesar comandos de UART2 y UART3
-    
+    if (HAL_GetTick() - last_read >= 2000) {
+        if (DHT11_Read(&dht_data)) {
+            room_control_set_temperature(&room_system, (float)dht_data.temperature);
+        }
+        last_read = HAL_GetTick();
+    }  // Leer cada 2 segundos
     // TODO: TAREA - Leer sensor de temperatura y actualizar sistema
     // float temperature = temperature_sensor_read();
     // room_control_set_temperature(&room_system, temperature);
@@ -465,7 +468,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : KEYPAD_C1_Pin */
   GPIO_InitStruct.Pin = KEYPAD_C1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(KEYPAD_C1_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : KEYPAD_C4_Pin */
@@ -476,8 +479,8 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : KEYPAD_C2_Pin KEYPAD_C3_Pin */
   GPIO_InitStruct.Pin = KEYPAD_C2_Pin|KEYPAD_C3_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : KEYPAD_R2_Pin KEYPAD_R4_Pin KEYPAD_R3_Pin */

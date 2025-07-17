@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 // Default password
-static const char DEFAULT_PASSWORD[] = "1234";
+static const char DEFAULT_PASSWORD[] = "7777";
 
 // Temperature thresholds for automatic fan control
 static const float TEMP_THRESHOLD_LOW = 25.0f;
@@ -13,8 +13,8 @@ static const float TEMP_THRESHOLD_MED = 28.0f;
 static const float TEMP_THRESHOLD_HIGH = 31.0f;
 
 // Timeouts in milliseconds
-static const uint32_t INPUT_TIMEOUT_MS = 10000;  // 10 seconds
-static const uint32_t ACCESS_DENIED_TIMEOUT_MS = 3000;  // 3 seconds
+static const uint32_t INPUT_TIMEOUT_MS = 20000;  // 20 seconds
+static const uint32_t ACCESS_DENIED_TIMEOUT_MS = 5000;  // 3 seconds
 
 // Private function prototypes
 static void room_control_change_state(room_control_t *room, room_state_t new_state);
@@ -119,9 +119,9 @@ void room_control_process_key(room_control_t *room, char key) {
             if (key == '#') {
             room->input_buffer[room->input_index] = '\0'; // Finaliza el string
             if (strcmp(room->input_buffer, room->password) == 0) {
-                room_control_change_state(room, ROOM_STATE_UNLOCKED);
+             room_control_change_state(room, ROOM_STATE_UNLOCKED);
             } else {
-                room_control_change_state(room, ROOM_STATE_LOCKED);
+            room_control_change_state(room, ROOM_STATE_ACCESS_DENIED); 
             }
                 room_control_clear_input(room); // Limpia el buffer después de validación
                 } else if (room->input_index < PASSWORD_LENGTH) {
